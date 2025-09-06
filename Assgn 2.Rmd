@@ -1,0 +1,175 @@
+---
+title: "**Analysis of Crimes in the US - 1960 to 2014**"
+author: "Hamza Mahmood - 0796503"
+date: "`r Sys.Date()`"
+output: pdf_document
+fontsize: 12 pt
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+Crime is a critical issue that impacts societies on multiple levels. Understanding the trends and correlations between different types of crimes and demographic factors is essential for effective policy-making. This report analyzes the US crime rates from 1960 to 2014 using various visualizations to uncover patterns and relationships within the data.
+
+## Data Description
+
+The data set comprises annual crime data in the US from 1960 to 2014, including the following variables:
+
+-   Population: The population of the United States (US).
+
+-   Total: Total number of all types of crimes.
+
+-   Violent: This category includes all crimes that involve force or threat of force against individuals. Violent crimes encompass offenses such as murder, forcible rape, robbery, and aggravated assault.
+
+-   Property: This category includes crimes involving the theft of property or damage to property without force against the victims.
+
+-   Murder: The unlawful killing of another human being with malice aforethought. This includes both first-degree murder (premeditated) and second-degree murder (not premeditated but with intent to kill).
+
+-   Forcible Rape: The carnal knowledge of a person forcibly and against their will. This includes assaults or attempts to commit rape by force or threat of force.
+
+-   Robbery: The taking or attempting to take anything of value from the care, custody, or control of a person or persons by force or threat of force or violence and/or by putting the victim in fear.
+
+-   Aggravated Assault: An unlawful attack by one person upon another for the purpose of inflicting severe or aggravated bodily injury. This type of assault usually involves the use of a weapon or other means likely to produce death or serious bodily harm.
+
+-   Burglary: The unlawful entry into a building or other structure with the intent to commit a felony or theft. Burglary does not necessarily involve the use of force to gain entry.
+
+-   Larceny Theft: The unlawful taking, carrying, leading, or riding away of property from the possession or constructive possession of another. This includes thefts without the use of force, violence, or fraud.
+
+-   Vehicle Theft: The theft or attempted theft of a motor vehicle. This category includes cars, trucks, motorcycles, and other motorized vehicles.
+
+```{r echo=FALSE}
+data <- read.csv("US_Crime_Rates_1960_2014.csv")
+```
+
+```{r warning=FALSE, message=FALSE, echo=FALSE}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(GGally)
+```
+
+## Analysis
+
+### Total Crimes Over the Years
+
+A line graph was created to visualize the total crimes over the years. This plot shows the trend of overall crime rates, highlighting peaks and declines across different decades.
+
+```{r echo=FALSE}
+# Total crimes over the years with full numbers on the y-axis and up to 2014 on the x-axis
+ggplot(data, aes(x = Year, y = Total)) +
+  geom_line() +
+  scale_y_continuous(labels = scales::comma) + # Display full numbers on the y-axis
+  scale_x_continuous(breaks = seq(1960, 2014,
+                                  by = 5)) + # Ensure the x-axis goes up to 2014
+  labs(title = "Total Crimes Over the Years", 
+       x = "Year", y = "Total Crimes") +
+  theme_minimal()
+```
+
+The graph illustrates the trend of total crimes in the United States from 1960 to 2014. The data reveals a sharp increase in total crimes from approximately 3 million in 1960 to a peak of around 14.5 million in the early 1990s. This surge can be attributed to various socio-economic factors such as urbanization, changes in drug laws, and economic conditions. After reaching the peak in the early 1990s, the total number of crimes began a steady decline, falling to about 9 million by 2014. This reduction in crime rates may be linked to improved law enforcement techniques, economic improvements, community policing initiatives, and demographic changes. Overall, the graph highlights a significant rise in crime rates over the first three decades, followed by a consistent decline over the subsequent two decades.
+
+### Crime Types Over the Years
+
+A trellis plot was created to show the trends of different crime types over the years. Each panel represents a specific crime type.
+
+```{r warning=FALSE, message=FALSE, echo=FALSE}
+library(ggplot2)
+library(reshape2)
+library(scales)
+
+# Ensure Year is treated as a numeric variable
+data$Year <- as.numeric(data$Year)
+
+# Select relevant columns
+crime_data <- data[, c("Year", "Violent", "Property", "Murder", "Forcible_Rape", "Robbery", "Aggravated_assault", "Burglary", "Larceny_Theft", "Vehicle_Theft")]
+
+# Melt the data for ggplot2
+crime_melt <- melt(crime_data, id.vars = "Year")
+
+# Create the Trellis plot (Facet Grid) with Year on the x-axis but without specific year labels
+ggplot(crime_melt, aes(x = Year, y = value)) +
+  geom_line(alpha = 0.8) +
+  facet_wrap(~ variable, scales = "free_y") +
+  scale_x_continuous(labels = NULL) +  # Remove x-axis labels
+  scale_y_continuous(labels = label_number()) +  # Format y-axis labels
+  labs(title = "Crime Types Over the Years - 1960 to 2014",
+       x = NULL,  # Remove x-axis title
+       y = "Crime Count",
+       color = "Crime Types") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank())  # Remove x-axis text
+```
+
+The provided image illustrates trends in various crime types in the United States from 1960 to 2014. Violent and property crimes, including murder, forcible rape, robbery, aggravated assault, burglary, larceny-theft, and vehicle theft, all showed significant increases until the early 1990s, followed by a steady decline. This general pattern suggests that socio-economic factors, urbanization, and changes in law enforcement and societal attitudes heavily influenced crime rates. The subsequent decline in crime rates post-1990s likely reflects improvements in policing strategies, technological advancements in security, and overall socio-economic development. These trends highlight the dynamic nature of criminal activity and the multifaceted approaches required to address it effectively.
+
+### Distribution of various crime types
+
+The following tree map provides a visual representation of the distribution of various crime types in the United States. Each segment's size reflects the proportion of each crime type relative to the others, offering an intuitive overview of the prevalence and relative impact of different crimes.
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+# Load necessary libraries
+library(treemap)
+library(dplyr)
+
+# Calculate the total sum for each crime type
+crime_totals <- data %>% 
+  select(Murder, Forcible_Rape, Robbery, Aggravated_assault, Burglary, Larceny_Theft, Vehicle_Theft, Violent, Property) %>%
+  summarise(across(everything(), sum))
+
+# Prepare data for treemap
+crime_totals_long <- crime_totals %>% 
+  pivot_longer(cols = everything(), names_to = "Crime", values_to = "Total")
+
+# Create the tree map
+treemap(crime_totals_long,
+        index = "Crime",
+        vSize = "Total",
+        type = "index",
+        title = "Distribution of Crimes",
+        palette = "Set3",
+        border.col = "white")
+
+```
+
+The treemap visualization shows that Property crimes occupy the largest segment, indicating their high prevalence, likely due to socio-economic factors such as poverty and unemployment. Larceny-theft and burglary are significant, reflecting economic hardships and opportunities for theft. Violent crimes, vehicle theft, and aggravated assault, represented by smaller portions, may be influenced by urbanization, social inequality, and inadequate community resources. Robbery appears less frequent, especially when compared to other similar crimes such as larceny, theft, and burglary These crime types collectively contribute to the overall crime rates in the U.S., with property crimes being the primary drivers. Understanding these proportions and their socio-economic drivers is crucial for targeted crime prevention and resource allocation, ultimately aiming to reduce the total crime rates in the country.
+
+### Relationship Between Two of the Most Prevalent Crimes: Property and Larceny Theft
+
+The scatterplot below illustrates the relationship between population size, property crimes, and larceny theft in the United States. The plot uses a color gradient to represent the number of larceny thefts, providing a multi-dimensional view of how these variables interact and influence each other over time.
+
+```{r warning=FALSE, message=FALSE, echo=FALSE}
+library(ggplot2)
+library(scales)
+
+# Ensure Year is treated as a numeric variable
+data$Year <- as.numeric(data$Year)
+
+# Create a scatterplot with Population, Property Crimes, and Larceny Theft
+ggplot(data, aes(x = Population, y = Property, color = Larceny_Theft)) +
+  geom_point(alpha = 0.7) +
+  scale_color_viridis_c(option = "viridis", labels = comma) +  # Use the Viridis color scale and format color labels with commas
+  scale_x_continuous(labels = comma) +  
+  labs(title = "Population, Property Crimes, and Larceny Theft",
+       x = "Population",
+       y = "Property Crimes",
+       color = "Larceny Theft") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+The scatterplot displays the relationship between population size and the number of property crimes, with color representing the number of larceny thefts. The x-axis shows the population, the y-axis shows the number of property crimes, and the color gradient indicates the volume of larceny thefts. The plot reveals a positive correlation between population and property crimes up to a certain point, after which the number of property crimes begins to decline despite further population growth. Additionally, higher values of larceny theft (indicated by the shift from purple to yellow) are associated with higher levels of property crimes, suggesting a strong relationship between these variables. This visualization highlights that both population size and larceny theft rates are significant factors influencing the number of property crimes.
+
+
+## Conclusion
+
+The analysis of US crime rates from 1960 to 2014 reveals critical trends and relationships among various crime types, providing valuable insights for policymakers and stakeholders. The data indicates a significant rise in total crime rates from the 1960s to the early 1990s, followed by a steady decline. This trend is observed across both violent and property crimes, suggesting the impact of broader socio-economic factors during these periods. Property crimes and larceny theft, dominate the overall crime distribution, underscoring their prevalence and the need for targeted interventions. The correlation analysis highlights a strong relationship between population growth and increases in property crimes and larceny theft, further emphasizing the influence of demographic changes on crime rates. Overall, this analysis underscores the importance of continued research and strategic policy-making to address the evolving landscape of crime and enhance public safety.
+
+
+
+
+
+
+
